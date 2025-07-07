@@ -1,0 +1,104 @@
+/* General Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+}
+
+.chat-container {
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+}
+
+.chat-header {
+    background-color: #007bff;
+    color: white;
+    border-radius: 10px 10px 0 0;
+}
+
+.chat-box {
+    height: 300px;
+    overflow-y: scroll;
+    background-color: #f1f1f1;
+    border-radius: 0 0 10px 10px;
+}
+
+.chat-input {
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+    border-radius: 0 0 10px 10px;
+}
+
+.input-group .form-control {
+    border-radius: 20px;
+}
+
+#sendBtn {
+    border-radius: 20px;
+}
+
+/* Chat bubbles */
+.chat-box .user-msg, .chat-box .finmate-msg {
+    padding: 10px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    max-width: 75%;
+}
+
+.chat-box .user-msg {
+    background-color: #007bff;
+    color: white;
+    align-self: flex-end;
+}
+
+.chat-box .finmate-msg {
+    background-color: #e1e1e1;
+    color: #333;
+    align-self: flex-start;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #343a40;
+    color: #f8f9fa;
+}
+
+.chat-container.dark-mode {
+    background-color: #495057;
+    border-color: #6c757d;
+}
+
+.chat-header.dark-mode {
+    background-color: #1f2a44;
+}
+
+.chat-box.dark-mode {
+    background-color: #343a40;
+    color: #f8f9fa;
+}
+
+.chat-input.dark-mode {
+    background-color: #495057;
+    border-top: 1px solid #6c757d;
+}
+
+.dark-mode .user-msg {
+    background-color: #007bff;
+    color: white;
+}
+
+.dark-mode .finmate-msg {
+    background-color: #6c757d;
+    color: #f8f9fa;
+}
+
+.dark-mode #sendBtn {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Dark Mode Toggle Button */
+#darkModeToggle {
+    border-radius: 20px;
+    padding: 5px 15px;
+}

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="mb-2"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Dashboard</h1>
+            <p class="text-muted">Track and manage your expenses efficiently</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Add Expense Form -->
+        <div class="col-lg-7 col-md-12 mb-4">
+            <div class="form-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0"><i class="fas fa-plus-circle me-2 text-primary"></i>Add Expense</h3>
+                </div>
+                <form method="POST" action="{{ url_for('add_expense') }}" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount (₹)</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-rupee-sign"></i></span>
+                            {{ form.amount(class="form-control", placeholder="Enter amount") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                            {{ form.category(class="form-select") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                            {{ form.date(class="form-control", type="date") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="receipt" class="form-label">Receipt (Optional)</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-file-image"></i></span>
+                            {{ form.receipt(class="form-control") }}
+                        </div>
+                        <div class="form-text">Upload receipt images (JPG, PNG) or PDFs</div>
+                    </div>
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <i class="fas fa-info-circle me-2 fs-5"></i>
+                        <div>Notes will be automatically generated based on your expense details.</div>
+                    </div>
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-5 col-md-12">
+            <!-- Summary Card -->
+            <div class="stats-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Quick Stats</h3>
+                </div>
+                
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <div class="text-center p-3 rounded" style="background: rgba(69, 104, 220, 0.1);">
+                            <div class="icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="value">{{ today_total }}</div>
+                            <div class="title">Today</div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-center p-3 rounded" style="background: rgba(69, 104, 220, 0.1);">
+                            <div class="icon">
+                                <i class="fas fa-calendar-week"></i>
+                            </div>
+                            <div class="value">{{ month_total }}</div>
+                            <div class="title">This Month</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Assistant Card -->
+            <div class="form-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0"><i class="fas fa-robot me-2 text-primary"></i>AI Assistant</h3>
+                </div>
+                <p>Get expense analysis, budget tips, and personalized financial advice.</p>
+                <a href="{{ url_for('ai_assistant') }}" class="btn btn-primary w-100">
+                    <i class="fas fa-comments me-2"></i>Talk to FinMate
+                </a>
+                
+                <!-- Quick Actions -->
+                <div class="mt-4">
+                    <h5 class="mb-3"><i class="fas fa-bolt me-2 text-warning"></i>Quick Actions</h5>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a href="{{ url_for('view_expenses') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-list me-1"></i> View Expenses
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{{ url_for('search_expenses_page') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-search me-1"></i> Advanced Search
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-2">
+                        <div class="col-6">
+                            <a href="{{ url_for('expense_prediction_page') }}" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-magic me-1"></i> Predictions
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{{ url_for('ai_assistant') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-chart-line me-1"></i> Analysis
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Expenses -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="form-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0"><i class="fas fa-history me-2 text-primary"></i>Recent Expenses</h3>
+                    <a href="{{ url_for('view_expenses') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>View All
+                    </a>
+                </div>
+                
+                {% if expenses %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Notes</th>
+                                <th>Receipt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in expenses %}
+                            <tr>
+                                <td>{{ expense.date.strftime('%d-%m-%Y') }}</td>
+                                <td>
+                                    <span class="expense-category category-{{ expense.expense_category.name.lower() }}">
+                                        {{ expense.expense_category.name }}
+                                    </span>
+                                </td>
+                                <td class="fw-bold">₹{{ "%.2f"|format(expense.amount) }}</td>
+                                <td>{{ expense.notes or 'No notes' }}</td>
+                                <td>
+                                    {% if expense.receipt_path %}
+                                    <a href="{{ url_for('view_receipt', expense_id=expense.id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-file-image me-1"></i> View
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted small">No receipt</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                    <p class="lead">No expenses added yet</p>
+                    <p class="text-muted">Use the form above to add your first expense</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add any dashboard-specific JavaScript here
+    });
+</script>
+{% endblock %}

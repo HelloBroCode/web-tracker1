@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}FinMate AI Assistant - Expense Tracker{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="mb-2"><i class="fas fa-robot me-2 text-primary"></i>FinMate Assistant</h1>
+            <p class="text-muted">Your AI-powered financial companion</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            
+            <div class="chat-container">
+           
+                <div class="chat-header">
+                    <div>
+                        <i class="fas fa-comment-dollar me-2"></i>
+                        <span class="fw-bold">Finance Assistant</span>
+                    </div>
+                    <div>
+                        <span class="badge bg-success rounded-pill">
+                            <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>Online
+                        </span>
+                    </div>
+                </div>
+
+                <div class="chat-box" id="chatBox">
+                    
+                </div>
+
+                <div class="chat-input">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="userInput" placeholder="Type your message here..." aria-label="Message">
+                        <button class="btn btn-primary" id="sendBtn">
+                            <i class="fas fa-paper-plane me-1"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-card mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0"><i class="fas fa-question-circle me-2 text-primary"></i>How to Use</h4>
+                </div>
+                
+                <p>FinMate can help you track expenses, analyze spending patterns, and provide financial advice. Try asking:</p>
+                
+                <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-plus-circle mb-3 text-primary" style="font-size: 2rem;"></i>
+                                <h5 class="card-title">Add Expenses</h5>
+                                <p class="card-text text-muted">"Add a new expense" or "I spent ₹500 on food"</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-pie mb-3 text-primary" style="font-size: 2rem;"></i>
+                                <h5 class="card-title">Get Insights</h5>
+                                <p class="card-text text-muted">"Analyze my spending" or "How much did I spend today?"</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-lightbulb mb-3 text-primary" style="font-size: 2rem;"></i>
+                                <h5 class="card-title">Financial Advice</h5>
+                                <p class="card-text text-muted">"Help me budget" or "Give me saving tips"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% endblock %}

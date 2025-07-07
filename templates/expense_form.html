@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Your Expenses</h2>
+
+<form method="POST" action="{{ url_for('view_expenses') }}">
+    <label for="date_from">From:</label>
+    <input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}">
+
+    <label for="date_to">To:</label>
+    <input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}">
+
+    <label for="category">Category:</label>
+    <select name="category">
+        <option value="0" {% if selected_category == 0 %}selected{% endif %}>All Categories</option>
+        {% for category in categories %}
+            <option value="{{ category[0] }}" {% if category[0] == selected_category %}selected{% endif %}>{{ category[1] }}</option>
+        {% endfor %}
+    </select>
+
+    <input type="submit" value="Filter">
+</form>
+
+{% endblock %}

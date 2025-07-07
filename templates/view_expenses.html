@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}View Expenses - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="mb-2"><i class="fas fa-list me-2 text-primary"></i>Your Expenses</h1>
+            <p class="text-muted">View, filter, and export your expense history</p>
+        </div>
+    </div>
+
+    <div class="form-card mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="mb-0"><i class="fas fa-filter me-2 text-primary"></i>Filter Expenses</h3>
+        </div>
+        
+        <form method="get" action="{{ url_for('view_expenses') }}">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                        <input type="text" class="form-control" id="start_date" name="start_date" value="{{ start_date or '' }}" placeholder="dd-mm-yyyy">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                        <input type="text" class="form-control" id="end_date" name="end_date" value="{{ end_date or '' }}" placeholder="dd-mm-yyyy">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="category" class="form-label">Category</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-tag"></i></span>
+                        <select id="category" name="category" class="form-select">
+                            <option value="0">All Categories</option>
+                            {% for cat_id, cat_name in categories %}
+                                <option value="{{ cat_id }}" {% if cat_id|string == selected_category|string %}selected{% endif %}>{{ cat_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="expense-table mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover text-center align-middle">
+                <thead>
+                    <tr>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Notes</th>
+                        <th>Time</th>
+                        <th>Receipt</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                        <tr>
+                            <td class="fw-bold">₹{{ "%.2f"|format(expense.amount) }}</td>
+                            <td>{{ expense.date.strftime('%d-%m-%Y') }}</td>
+                            <td>
+                                <span class="expense-category category-{{ expense.expense_category.name.lower() }}">
+                                    {{ expense.expense_category.name }}
+                                </span>
+                            </td>
+                            <td>{{ expense.notes or 'N/A' }}</td>
+                            <td>{{ expense.time.strftime('%H:%M') }}</td>
+                            <td>
+                                {% if expense.receipt_path %}
+                                <a href="{{ url_for('view_receipt', expense_id=expense.id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-file-image me-1"></i> View
+                                </a>
+                                {% else %}
+                                <span class="text-muted small">No receipt</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <form method="post" action="{{ url_for('delete_expense', expense_id=expense.id) }}" onsubmit="return confirm('Are you sure you want to delete this expense?');">
+                                        <button type="submit" class="btn btn-sm action-button action-delete">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>No expenses found for the selected filters
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center gap-3 mb-4">
+        <a href="{{ url_for('export_csv', start_date=start_date, end_date=end_date, category=selected_category) }}" class="btn btn-success">
+            <i class="fas fa-file-csv me-2"></i>Export CSV
+        </a>
+        <a href="{{ url_for('export_pdf', start_date=start_date, end_date=end_date, category=selected_category) }}" class="btn btn-danger">
+            <i class="fas fa-file-pdf me-2"></i>Export PDF
+        </a>
+    </div>
+
+    {% if pagination %}
+    <nav aria-label="Expense page navigation">
+        <ul class="pagination justify-content-center mb-4">
+            {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('view_expenses', page=pagination.prev_num, start_date=start_date, end_date=end_date, category=selected_category) }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="fas fa-chevron-left"></i></span></li>
+            {% endif %}
+
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num == pagination.page %}
+                        <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('view_expenses', page=page_num, start_date=start_date, end_date=end_date, category=selected_category) }}">{{ page_num }}</a></li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('view_expenses', page=pagination.next_num, start_date=start_date, end_date=end_date, category=selected_category) }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="fas fa-chevron-right"></i></span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title mb-3"><i class="fas fa-chart-pie me-2 text-primary"></i>Expenses by Category</h4>
+                <div>{{ pie_chart_html|safe }}</div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="chart-container">
+                <h4 class="chart-title mb-3"><i class="fas fa-chart-bar me-2 text-primary"></i>Expenses Over Time</h4>
+                <div>{{ bar_chart_html|safe }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

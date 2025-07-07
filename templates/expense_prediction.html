@@ -1,0 +1,625 @@
+{% extends "base.html" %}
+
+{% block title %}Expense Predictions - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="mb-2"><i class="fas fa-chart-line me-2 text-primary"></i>Expense Predictions</h1>
+            <p class="text-muted">AI-powered predictions for your future expenses</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="form-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0"><i class="fas fa-sliders-h me-2 text-primary"></i>Prediction Settings</h3>
+                </div>
+                <form id="predictionForm" class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label for="months" class="form-label">Number of Months to Predict</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                            <select id="months" class="form-select">
+                                <option value="1" {% if months == 1 %}selected{% endif %}>1 Month</option>
+                                <option value="3" {% if months == 3 %}selected{% endif %}>3 Months</option>
+                                <option value="6" {% if months == 6 %}selected{% endif %}>6 Months</option>
+                                <option value="12" {% if months == 12 %}selected{% endif %}>12 Months</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-magic me-2"></i>Generate Predictions
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="text-center my-5 d-none">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">Analyzing your expense patterns and generating predictions...</p>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorMessage" class="alert alert-danger d-none" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <span id="errorText"></span>
+        
+        <div id="notEnoughDataHelp" class="mt-3 d-none">
+            <hr>
+            <h5><i class="fas fa-info-circle me-2"></i>Why am I seeing this?</h5>
+            <p>The prediction feature requires at least 5 expense entries to generate accurate forecasts. To make the most of this feature:</p>
+            <ul>
+                <li>Add more expenses from your transaction history</li>
+                <li>Ensure expenses are properly categorized</li>
+                <li>Include expenses from multiple months for better trend analysis</li>
+            </ul>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-plus-circle me-1"></i> Add Expenses
+            </a>
+        </div>
+    </div>
+
+    <!-- Prediction Results -->
+    <div id="predictionResults" class="d-none">
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="form-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Prediction Summary</h3>
+                        <span class="badge bg-primary" id="totalPrediction"></span>
+                    </div>
+                    <p class="text-muted">Based on your historical spending patterns, here's what you might spend in the coming months:</p>
+                    
+                    <!-- Monthly Prediction Chart -->
+                    <div class="chart-container">
+                        <canvas id="monthlyPredictionChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="mb-0"><i class="fas fa-table me-2 text-primary"></i>Monthly Breakdown</h3>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Total Predicted Expense</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="predictionTableBody">
+                                <!-- Table rows will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Month Detail Modal -->
+    <div class="modal fade" id="monthDetailModal" tabindex="-1" aria-labelledby="monthDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="monthDetailModalLabel">Month Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="chart-container">
+                                <canvas id="categoryPieChart" height="220"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Predicted Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="categoryTableBody">
+                                        <!-- Populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cache DOM elements
+        const predictionTableBody = document.getElementById('predictionTableBody');
+        const categoryTableBody = document.getElementById('categoryTableBody');
+        const predictionForm = document.getElementById('predictionForm');
+        const monthDetailModal = new bootstrap.Modal(document.getElementById('monthDetailModal'));
+        const monthDetailModalLabel = document.getElementById('monthDetailModalLabel');
+        const loadingSpinner = document.getElementById('loadingIndicator');
+        const predictionResults = document.getElementById('predictionResults');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const totalPrediction = document.getElementById('totalPrediction');
+        
+        // Variables to store chart instances
+        let predictionChart = null;
+        let categoryChart = null;
+        let monthlyChart = null;
+        
+        // Track the current data for chart refreshes
+        let currentMonths = [];
+        let currentTotals = [];
+        
+        // Store current category data for refreshing
+        const currentCategoryData = {
+            categories: [],
+            amounts: [],
+            colors: []
+        };
+        
+        // Store current prediction data for refreshing
+        const currentPredictionData = {
+            months: [],
+            totals: []
+        };
+        
+        // Color palette for categories (ensure consistency)
+        const colorPalette = [
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(255, 159, 64, 0.7)',
+            'rgba(153, 102, 255, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(231, 233, 237, 0.7)',
+            'rgba(97, 97, 97, 0.7)'
+        ];
+        
+        // Function to refresh charts when dark mode changes
+        function refreshChartsForDarkMode() {
+            // Check if we need to refresh the category pie chart
+            if (categoryChart && currentCategoryData.categories.length > 0) {
+                createCategoryPieChart(
+                    currentCategoryData.categories,
+                    currentCategoryData.amounts,
+                    currentCategoryData.colors
+                );
+            }
+            
+            // Check if we need to refresh the monthly chart
+            if (monthlyChart && currentMonths.length > 0) {
+                createMonthlyChart(currentMonths, currentTotals);
+            }
+        }
+        
+        // Random color generator for additional categories
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+        
+        // Format currency
+        function formatCurrency(amount) {
+            return '₹' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+        
+        // Format month-year
+        function formatMonthYear(monthYear) {
+            const [year, month] = monthYear.split('-');
+            const date = new Date(year, parseInt(month) - 1, 1);
+            return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        }
+        
+        // Fetch predictions and update UI
+        function fetchPredictions(months) {
+            // Show loading, hide results and errors
+            loadingSpinner.classList.remove('d-none');
+            predictionResults.classList.add('d-none');
+            errorMessage.classList.add('d-none');
+            document.getElementById('notEnoughDataHelp').classList.add('d-none');
+            
+            // Make API request
+            fetch(`/api/expenses/predict?months=${months}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading
+                    loadingSpinner.classList.add('d-none');
+                    
+                    if (!data.success) {
+                        // Show error with more descriptive message
+                        errorText.textContent = data.message || 'An error occurred while generating predictions. Please make sure you have at least 5 expense entries.';
+                        errorMessage.classList.remove('d-none');
+                        
+                        // Show help section if the error is about not having enough data
+                        if (data.message && data.message.includes('Not enough expense data')) {
+                            document.getElementById('notEnoughDataHelp').classList.remove('d-none');
+                        }
+                        return;
+                    }
+                    
+                    // Show results
+                    predictionResults.classList.remove('d-none');
+                    
+                    // Update total prediction
+                    totalPrediction.textContent = 'Total: ' + formatCurrency(data.predictions.total_predicted);
+                    
+                    // Prepare data for charts
+                    const months = Object.keys(data.predictions.by_month).map(formatMonthYear);
+                    const totals = Object.values(data.predictions.by_month).map(m => m.total);
+                    
+                    // Create monthly chart
+                    createMonthlyChart(months, totals);
+                    
+                    // Populate prediction table
+                    populatePredictionTable(data.predictions.by_month);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingSpinner.classList.add('d-none');
+                    errorText.textContent = 'Failed to fetch predictions. Please ensure you have sufficient expense data and try again.';
+                    errorMessage.classList.remove('d-none');
+                    document.getElementById('notEnoughDataHelp').classList.remove('d-none');
+                });
+        }
+        
+        // Create monthly prediction chart
+        function createMonthlyChart(months, totals) {
+            // Store current data for refreshing
+            currentMonths = [...months];
+            currentTotals = [...totals];
+            
+            // Also store in currentPredictionData
+            currentPredictionData.months = [...months];
+            currentPredictionData.totals = [...totals];
+            
+            const chartCanvas = document.getElementById('monthlyPredictionChart');
+            if (!chartCanvas) {
+                console.error('Cannot find chart canvas element with ID: monthlyPredictionChart');
+                return;
+            }
+            
+            const ctx = chartCanvas.getContext('2d');
+            
+            // Check if dark mode is active
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            const textColor = isDarkMode ? '#f0f0f0' : '#333';
+            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            
+            // Destroy existing chart if it exists
+            if (monthlyChart) {
+                monthlyChart.destroy();
+            }
+            
+            monthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Predicted Expenses',
+                        data: totals,
+                        backgroundColor: isDarkMode ? 'rgba(93, 118, 209, 0.7)' : 'rgba(69, 104, 220, 0.7)',
+                        borderColor: isDarkMode ? 'rgba(93, 118, 209, 1)' : 'rgba(69, 104, 220, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: textColor,
+                                callback: function(value) {
+                                    return '₹' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: textColor
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                            titleColor: isDarkMode ? '#f0f0f0' : '#333',
+                            bodyColor: isDarkMode ? '#f0f0f0' : '#333',
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Predicted: ' + formatCurrency(context.raw);
+                                }
+                            }
+                        },
+                        legend: {
+                            labels: {
+                                color: textColor
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Populate prediction table
+        function populatePredictionTable(predictionsData) {
+            predictionTableBody.innerHTML = '';
+            
+            Object.entries(predictionsData).forEach(([monthKey, data]) => {
+                const row = document.createElement('tr');
+                
+                // Month column
+                const monthCell = document.createElement('td');
+                monthCell.textContent = formatMonthYear(monthKey);
+                row.appendChild(monthCell);
+                
+                // Total column
+                const totalCell = document.createElement('td');
+                totalCell.textContent = formatCurrency(data.total);
+                totalCell.classList.add('fw-bold');
+                row.appendChild(totalCell);
+                
+                // Details column
+                const detailsCell = document.createElement('td');
+                const detailsBtn = document.createElement('button');
+                detailsBtn.className = 'btn btn-sm btn-outline-primary';
+                detailsBtn.innerHTML = '<i class="fas fa-chart-pie me-1"></i> View Details';
+                detailsBtn.addEventListener('click', () => showMonthDetails(monthKey, data));
+                detailsCell.appendChild(detailsBtn);
+                row.appendChild(detailsCell);
+                
+                predictionTableBody.appendChild(row);
+            });
+        }
+        
+        // Show month details in modal
+        function showMonthDetails(monthKey, data) {
+            // Set modal title
+            monthDetailModalLabel.textContent = 'Prediction Details for ' + formatMonthYear(monthKey);
+            
+            // Get category data
+            const categories = Object.keys(data.categories);
+            const amounts = Object.values(data.categories);
+            
+            // Create category colors (ensure consistent colors)
+            const categoryColors = categories.map((_, index) => 
+                index < colorPalette.length ? colorPalette[index] : getRandomColor()
+            );
+            
+            // Create category pie chart
+            createCategoryPieChart(categories, amounts, categoryColors);
+            
+            // Populate category table
+            populateCategoryTable(categories, amounts);
+            
+            // Apply dark mode styling to modal if needed
+            if (document.body.classList.contains('dark-mode')) {
+                const modalElement = document.getElementById('monthDetailModal');
+                modalElement.classList.add('dark-mode-modal');
+                
+                // Ensure all elements within the modal have dark mode styling
+                const modalContent = modalElement.querySelector('.modal-content');
+                if (modalContent) {
+                    modalContent.classList.add('dark-mode-modal');
+                }
+            }
+            
+            // Show modal
+            monthDetailModal.show();
+        }
+        
+        // Create category pie chart
+        function createCategoryPieChart(categories, amounts, colors) {
+            // Store current data for refreshing
+            currentCategoryData.categories = [...categories];
+            currentCategoryData.amounts = [...amounts];
+            currentCategoryData.colors = [...colors];
+            
+            const ctx = document.getElementById('categoryPieChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (categoryChart) {
+                categoryChart.destroy();
+            }
+            
+            // Check if dark mode is active
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            const textColor = isDarkMode ? '#f0f0f0' : '#333';
+            const borderColor = isDarkMode ? '#1e1e1e' : '#fff';
+            
+            // Apply brightness adjustment to colors in dark mode
+            const adjustedColors = isDarkMode 
+                ? colors.map(color => adjustColorBrightness(color, 20)) 
+                : colors;
+            
+            categoryChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        data: amounts,
+                        backgroundColor: adjustedColors,
+                        borderWidth: isDarkMode ? 2 : 1,
+                        borderColor: borderColor
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                            titleColor: isDarkMode ? '#f0f0f0' : '#333',
+                            bodyColor: isDarkMode ? '#f0f0f0' : '#333',
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = formatCurrency(context.raw);
+                                    const percentage = (context.raw / context.dataset.data.reduce((a, b) => a + b, 0) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        legend: {
+                            labels: {
+                                color: textColor,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Function to adjust color brightness
+        function adjustColorBrightness(color, percent) {
+            // Convert hex or rgba to rgba
+            let rgba;
+            
+            if (color.startsWith('#')) {
+                const hex = color.substring(1);
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                rgba = { r, g, b, a: 1 };
+            } else if (color.startsWith('rgba')) {
+                const matches = color.match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d\.]+)\s*\)/);
+                if (matches) {
+                    rgba = {
+                        r: parseInt(matches[1]),
+                        g: parseInt(matches[2]),
+                        b: parseInt(matches[3]),
+                        a: parseFloat(matches[4])
+                    };
+                }
+            } else if (color.startsWith('rgb')) {
+                const matches = color.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+                if (matches) {
+                    rgba = {
+                        r: parseInt(matches[1]),
+                        g: parseInt(matches[2]),
+                        b: parseInt(matches[3]),
+                        a: 1
+                    };
+                }
+            }
+            
+            if (!rgba) return color;
+            
+            // Adjust brightness
+            rgba.r = Math.min(255, Math.max(0, rgba.r + percent));
+            rgba.g = Math.min(255, Math.max(0, rgba.g + percent));
+            rgba.b = Math.min(255, Math.max(0, rgba.b + percent));
+            
+            return `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a})`;
+        }
+        
+        // Populate category table
+        function populateCategoryTable(categories, amounts) {
+            categoryTableBody.innerHTML = '';
+            
+            // Sort categories by amount (descending)
+            const categoryData = categories.map((category, index) => ({
+                category,
+                amount: amounts[index]
+            })).sort((a, b) => b.amount - a.amount);
+            
+            categoryData.forEach(({ category, amount }) => {
+                const row = document.createElement('tr');
+                
+                // Category column
+                const categoryCell = document.createElement('td');
+                categoryCell.textContent = category;
+                row.appendChild(categoryCell);
+                
+                // Amount column
+                const amountCell = document.createElement('td');
+                amountCell.textContent = formatCurrency(amount);
+                amountCell.classList.add('fw-bold');
+                row.appendChild(amountCell);
+                
+                categoryTableBody.appendChild(row);
+            });
+        }
+        
+        // Handle form submission
+        predictionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const monthsSelect = document.getElementById('months');
+            if (!monthsSelect) {
+                console.error('Cannot find months select element');
+                return;
+            }
+            
+            const months = monthsSelect.value;
+            console.log('Generating predictions for', months, 'months');
+            fetchPredictions(months);
+        });
+        
+        // Set up a MutationObserver to refresh charts when dark mode changes
+        const darkModeObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    if (mutation.target === document.body) {
+                        refreshChartsForDarkMode();
+                    }
+                }
+            });
+        });
+        
+        // Start observing the body element for class changes
+        darkModeObserver.observe(document.body, { attributes: true });
+        
+        // Initial load - trigger predictions
+        const monthsSelect = document.getElementById('months');
+        if (monthsSelect) {
+            const months = monthsSelect.value;
+            fetchPredictions(months);
+        } else {
+            console.error('Cannot find months select element for initial load');
+        }
+    });
+</script>
+{% endblock %} 

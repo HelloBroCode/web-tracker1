@@ -38,15 +38,15 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'ZmNkZTQzY2YzMTg0YjEwYjA3Zjk1
 if os.getenv('RENDER'):
     # For Render, use PostgreSQL
     db_url = os.getenv('DATABASE_URL', '')
-    if db_url:
+    if db_url and 'postgres' in db_url:
         # Replace postgres:// with postgresql:// (SQLAlchemy compatibility)
         db_url = db_url.replace('postgres://', 'postgresql://')
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url
         print("Using PostgreSQL database for production")
     else:
-        # Fallback to SQLite if no DATABASE_URL is provided
+        # Fallback to SQLite if no valid DATABASE_URL is provided
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
-        print("Warning: DATABASE_URL not found. Using SQLite database as fallback.")
+        print("Warning: DATABASE_URL not found or invalid. Using SQLite database as fallback.")
 else:
     # Use SQLite for local development
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
